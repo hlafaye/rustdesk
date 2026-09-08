@@ -770,5 +770,10 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("port-forward-mux-tip", "Fører alle forbindelser i en portvideresendelse gennem én enkelt forbindelse til modparten i stedet for at forbinde og logge ind igen for hver enkelt."),
         ("Enable WebRTC P2P connection", "Aktivér WebRTC P2P-forbindelse"),
         ("Enable TCP hole punching", "Aktivér TCP hole punching"),
+        ("The screen sharing request was declined on the remote device", "Anmodningen om skærmdeling blev afvist på fjernenheden"),
+        ("No one responded to the screen sharing request on the remote device", "Ingen svarede på anmodningen om skærmdeling på fjernenheden"),
+        ("The XDG Desktop Portal ended the screen sharing request ({})", "XDG Desktop Portal afsluttede anmodningen om skærmdeling ({})"),
+        ("The XDG Desktop Portal returned no screen to capture, the PipeWire library may be too old", "XDG Desktop Portal returnerede ingen skærm at optage, PipeWire-biblioteket er måske for gammelt"),
+        ("A GStreamer plugin needed for screen capture is missing ({})", "Et GStreamer-plugin, der kræves til skærmoptagelse, mangler ({})"),
     ].iter().cloned().collect();
 }
