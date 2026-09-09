@@ -205,6 +205,20 @@ jobs:
           echo "=== defaut approve-mode cuit ==="
           grep -n 'approve-mode' "$f"
 
+          # ─── Capture : ECRAN ENTIER, pas « une seule app » ────────────────
+          # Depuis Android 14, createScreenCaptureIntent() SANS config propose
+          # « partager une app / tout l'ecran ». Un support qui ne voit que
+          # HorizonPOS ne peut ni ouvrir les reglages, ni depanner un
+          # peripherique. createConfigForDefaultDisplay() retire ce choix : il
+          # ne reste qu'accepter ou refuser l'ecran entier.
+          # (doc Android : "opt out of app screen sharing")
+          k=flutter/android/app/src/main/kotlin/com/carriez/flutter_hbb/PermissionRequestTransparentActivity.kt
+          grep -qF 'val intent = mediaProjectionManager.createScreenCaptureIntent()' "$k"
+          sed -i 's|val intent = mediaProjectionManager.createScreenCaptureIntent()|val intent = if (Build.VERSION.SDK_INT >= 34) mediaProjectionManager.createScreenCaptureIntent(android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay()) else mediaProjectionManager.createScreenCaptureIntent()|' "$k"
+          grep -q 'createConfigForDefaultDisplay' "$k"
+          echo "=== capture plein ecran imposee ==="
+          grep -n 'createScreenCaptureIntent' "$k"
+
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -533,6 +547,20 @@ jobs:
           ! grep -qF 'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();' "$f"
           echo "=== defaut approve-mode cuit ==="
           grep -n 'approve-mode' "$f"
+
+          # ─── Capture : ECRAN ENTIER, pas « une seule app » ────────────────
+          # Depuis Android 14, createScreenCaptureIntent() SANS config propose
+          # « partager une app / tout l'ecran ». Un support qui ne voit que
+          # HorizonPOS ne peut ni ouvrir les reglages, ni depanner un
+          # peripherique. createConfigForDefaultDisplay() retire ce choix : il
+          # ne reste qu'accepter ou refuser l'ecran entier.
+          # (doc Android : "opt out of app screen sharing")
+          k=flutter/android/app/src/main/kotlin/com/carriez/flutter_hbb/PermissionRequestTransparentActivity.kt
+          grep -qF 'val intent = mediaProjectionManager.createScreenCaptureIntent()' "$k"
+          sed -i 's|val intent = mediaProjectionManager.createScreenCaptureIntent()|val intent = if (Build.VERSION.SDK_INT >= 34) mediaProjectionManager.createScreenCaptureIntent(android.media.projection.MediaProjectionConfig.createConfigForDefaultDisplay()) else mediaProjectionManager.createScreenCaptureIntent()|' "$k"
+          grep -q 'createConfigForDefaultDisplay' "$k"
+          echo "=== capture plein ecran imposee ==="
+          grep -n 'createScreenCaptureIntent' "$k"
 
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
