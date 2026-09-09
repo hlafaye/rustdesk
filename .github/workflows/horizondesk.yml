@@ -171,6 +171,27 @@ jobs:
           echo "=== configuration cuite ==="
           grep -n 'RENDEZVOUS_SERVERS\|RS_PUB_KEY' "$f"
 
+          # ─── Identite HorizonDesk ────────────────────────────────────────
+          # On change UNIQUEMENT applicationId (identite d'installation).
+          # Le "namespace" Kotlin reste com.carriez.flutter_hbb : les symboles
+          # JNI exportes sont Java_ffi_FFI_* et la lib native ne contient AUCUNE
+          # reference a com/carriez -> renommer le namespace serait un risque inutile.
+          g=flutter/android/app/build.gradle
+          m=flutter/android/app/src/main/AndroidManifest.xml
+          grep -q 'applicationId "com.carriez.flutter_hbb"' "$g"
+          grep -q 'android:label="RustDesk"' "$m"
+          grep -q 'android:label="RustDesk Input"' "$m"
+          sed -i 's|applicationId "com.carriez.flutter_hbb"|applicationId "fr.parsight.horizondesk"|' "$g"
+          sed -i 's|android:label="RustDesk Input"|android:label="HorizonDesk Input"|' "$m"
+          sed -i 's|android:label="RustDesk"|android:label="HorizonDesk"|' "$m"
+          # Verifications : nouvelle identite posee, namespace INTACT.
+          grep -q 'applicationId "fr.parsight.horizondesk"' "$g"
+          grep -q 'namespace "com.carriez.flutter_hbb"' "$g"
+          ! grep -q 'android:label="RustDesk"' "$m"
+          echo "=== identite ==="
+          grep -n 'applicationId\|namespace' "$g"
+          grep -n 'android:label=' "$m"
+
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -465,6 +486,27 @@ jobs:
           ! grep -q 'OeVuKk5nlHiXp' "$f"
           echo "=== configuration cuite ==="
           grep -n 'RENDEZVOUS_SERVERS\|RS_PUB_KEY' "$f"
+
+          # ─── Identite HorizonDesk ────────────────────────────────────────
+          # On change UNIQUEMENT applicationId (identite d'installation).
+          # Le "namespace" Kotlin reste com.carriez.flutter_hbb : les symboles
+          # JNI exportes sont Java_ffi_FFI_* et la lib native ne contient AUCUNE
+          # reference a com/carriez -> renommer le namespace serait un risque inutile.
+          g=flutter/android/app/build.gradle
+          m=flutter/android/app/src/main/AndroidManifest.xml
+          grep -q 'applicationId "com.carriez.flutter_hbb"' "$g"
+          grep -q 'android:label="RustDesk"' "$m"
+          grep -q 'android:label="RustDesk Input"' "$m"
+          sed -i 's|applicationId "com.carriez.flutter_hbb"|applicationId "fr.parsight.horizondesk"|' "$g"
+          sed -i 's|android:label="RustDesk Input"|android:label="HorizonDesk Input"|' "$m"
+          sed -i 's|android:label="RustDesk"|android:label="HorizonDesk"|' "$m"
+          # Verifications : nouvelle identite posee, namespace INTACT.
+          grep -q 'applicationId "fr.parsight.horizondesk"' "$g"
+          grep -q 'namespace "com.carriez.flutter_hbb"' "$g"
+          ! grep -q 'android:label="RustDesk"' "$m"
+          echo "=== identite ==="
+          grep -n 'applicationId\|namespace' "$g"
+          grep -n 'android:label=' "$m"
 
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
