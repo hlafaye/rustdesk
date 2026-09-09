@@ -219,6 +219,20 @@ jobs:
           echo "=== capture plein ecran imposee ==="
           grep -n 'createScreenCaptureIntent' "$k"
 
+          # ─── Tracabilite : savoir QUEL build tourne sur une tablette ──────
+          # Tous nos builds portaient le meme nom de fichier, le meme
+          # versionName et le meme versionCode : impossible de dire lequel
+          # etait installe, et Android ne voyait aucune montee de version.
+          # On grave le numero de run de la CI dans les deux.
+          # (le nom du FICHIER reste stable : HORIZONDESK_APK_URL ne bouge pas)
+          grep -qF 'versionCode flutterVersionCode.toInteger()' "$g"
+          grep -qF 'versionName flutterVersionName' "$g"
+          sed -i 's|versionCode flutterVersionCode.toInteger()|versionCode flutterVersionCode.toInteger() + (System.getenv("GITHUB_RUN_NUMBER") ? System.getenv("GITHUB_RUN_NUMBER").toInteger() : 0)|' "$g"
+          sed -i 's|versionName flutterVersionName|versionName flutterVersionName + "-hz" + (System.getenv("GITHUB_RUN_NUMBER") ?: "dev")|' "$g"
+          grep -q 'GITHUB_RUN_NUMBER' "$g"
+          echo "=== version tracable ==="
+          grep -n 'versionCode\|versionName' "$g" | head -4
+
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -561,6 +575,20 @@ jobs:
           grep -q 'createConfigForDefaultDisplay' "$k"
           echo "=== capture plein ecran imposee ==="
           grep -n 'createScreenCaptureIntent' "$k"
+
+          # ─── Tracabilite : savoir QUEL build tourne sur une tablette ──────
+          # Tous nos builds portaient le meme nom de fichier, le meme
+          # versionName et le meme versionCode : impossible de dire lequel
+          # etait installe, et Android ne voyait aucune montee de version.
+          # On grave le numero de run de la CI dans les deux.
+          # (le nom du FICHIER reste stable : HORIZONDESK_APK_URL ne bouge pas)
+          grep -qF 'versionCode flutterVersionCode.toInteger()' "$g"
+          grep -qF 'versionName flutterVersionName' "$g"
+          sed -i 's|versionCode flutterVersionCode.toInteger()|versionCode flutterVersionCode.toInteger() + (System.getenv("GITHUB_RUN_NUMBER") ? System.getenv("GITHUB_RUN_NUMBER").toInteger() : 0)|' "$g"
+          sed -i 's|versionName flutterVersionName|versionName flutterVersionName + "-hz" + (System.getenv("GITHUB_RUN_NUMBER") ?: "dev")|' "$g"
+          grep -q 'GITHUB_RUN_NUMBER' "$g"
+          echo "=== version tracable ==="
+          grep -n 'versionCode\|versionName' "$g" | head -4
 
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
