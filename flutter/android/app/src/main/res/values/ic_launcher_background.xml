@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#ffffff</color>
+    <!-- HorizonDesk : le fond de l'icone adaptative doit etre le meme noir que
+         celui du dessin (et que l'icone d'Horizon POS), sinon Android compose
+         nos cretes sur du blanc. -->
+    <color name="ic_launcher_background">#0a0a0c</color>
 </resources>
