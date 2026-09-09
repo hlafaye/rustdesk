@@ -192,6 +192,19 @@ jobs:
           grep -n 'applicationId\|namespace' "$g"
           grep -n 'android:label=' "$m"
 
+          # ─── Pas de mot de passe : l'operateur accepte a l'ecran ──────────
+          # approve-mode=click => le champ mot de passe DISPARAIT de l'UI
+          # (server.dart:57) et le Rust n'en reclame aucun (connection.rs:2892).
+          # Pose en DEFAULT_SETTINGS (defaut) et non OVERWRITE : une borne sans
+          # personne devant l'ecran pourra repasser en mode mot de passe.
+          # get_option() lit : OVERWRITE > reglage utilisateur > DEFAULT.
+          grep -qF 'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();' "$f"
+          sed -i 's|pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();|pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([("approve-mode".to_owned(), "click".to_owned())]));|' "$f"
+          grep -qF 'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([("approve-mode".to_owned(), "click".to_owned())]));' "$f"
+          ! grep -qF 'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();' "$f"
+          echo "=== defaut approve-mode cuit ==="
+          grep -n 'approve-mode' "$f"
+
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -507,6 +520,19 @@ jobs:
           echo "=== identite ==="
           grep -n 'applicationId\|namespace' "$g"
           grep -n 'android:label=' "$m"
+
+          # ─── Pas de mot de passe : l'operateur accepte a l'ecran ──────────
+          # approve-mode=click => le champ mot de passe DISPARAIT de l'UI
+          # (server.dart:57) et le Rust n'en reclame aucun (connection.rs:2892).
+          # Pose en DEFAULT_SETTINGS (defaut) et non OVERWRITE : une borne sans
+          # personne devant l'ecran pourra repasser en mode mot de passe.
+          # get_option() lit : OVERWRITE > reglage utilisateur > DEFAULT.
+          grep -qF 'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();' "$f"
+          sed -i 's|pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();|pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([("approve-mode".to_owned(), "click".to_owned())]));|' "$f"
+          grep -qF 'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([("approve-mode".to_owned(), "click".to_owned())]));' "$f"
+          ! grep -qF 'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();' "$f"
+          echo "=== defaut approve-mode cuit ==="
+          grep -n 'approve-mode' "$f"
 
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
