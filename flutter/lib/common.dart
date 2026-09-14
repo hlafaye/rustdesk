@@ -377,8 +377,11 @@ class MyTheme {
     hoverColor: Color.fromARGB(255, 224, 224, 224),
     scaffoldBackgroundColor: Colors.white,
     dialogBackgroundColor: Colors.white,
+    // HorizonDesk : en-tête bleu nuit du bandeau HorizonDesk (plus le bleu RustDesk).
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
+      backgroundColor: Color(0xFF121A2B),
+      foregroundColor: Colors.white,
     ),
     dialogTheme: DialogTheme(
       elevation: 15,
@@ -453,7 +456,7 @@ class MyTheme {
         style:
             MenuStyle(backgroundColor: MaterialStatePropertyAll(Colors.white))),
     colorScheme: ColorScheme.light(
-        primary: Colors.blue, secondary: accent, background: grayBg),
+        primary: accent, secondary: accent, background: grayBg),
     popupMenuTheme: PopupMenuThemeData(
         color: Colors.white,
         shape: RoundedRectangleBorder(
@@ -477,6 +480,8 @@ class MyTheme {
     dialogBackgroundColor: Color(0xFF18191E),
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
+      backgroundColor: Color(0xFF121A2B),
+      foregroundColor: Colors.white,
     ),
     dialogTheme: DialogTheme(
       elevation: 15,
@@ -561,7 +566,7 @@ class MyTheme {
         style: MenuStyle(
             backgroundColor: MaterialStatePropertyAll(Color(0xFF121212)))),
     colorScheme: ColorScheme.dark(
-      primary: Colors.blue,
+      primary: Color(0xFF0EA371),
       secondary: accent,
       background: Color(0xFF24252B),
     ),
@@ -1322,7 +1327,7 @@ Color? _msgboxColor(String type) {
   if (type.contains("error") || type == "re-input-password") {
     return Color(0xFFE04F5F);
   }
-  return Color(0xFF2C8CFF);
+  return Color(0xFF0EA371);
 }
 
 Widget msgboxIcon(String type) {
