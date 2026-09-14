@@ -2,7 +2,7 @@
 # Derive de .github/workflows/flutter-build.yml (amont) : seuls les jobs
 # Android sont conserves, plus une etape qui cuit relay + cle publique.
 # Amont AGPL-3.0 — sources publiques, cf. README du fork.
-name: Build the flutter version of the RustDesk
+name: HorizonDesk — APK Android (relay et clé cuits)
 
 on:
   workflow_dispatch:
