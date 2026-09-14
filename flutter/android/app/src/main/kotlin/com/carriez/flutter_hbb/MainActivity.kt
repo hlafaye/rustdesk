@@ -647,6 +647,17 @@ class MainActivity : FlutterActivity() {
                 "on_voice_call_closed" -> {
                     onVoiceCallClosed()
                 }
+                // HorizonDesk — écran de l'app (flutter/lib/mobile/pages/horizondesk_page.dart)
+                "horizon_status" -> {
+                    result.success(HashMap(HorizonStatus.snapshot(this)))
+                }
+                "horizon_note_id" -> {
+                    HorizonStatus.noteId(this, call.arguments as? String ?: "")
+                    result.success(true)
+                }
+                "horizon_open" -> {
+                    result.success(HorizonStatus.open(this, call.arguments as? String ?: ""))
+                }
                 else -> {
                     result.error("-1", "No such method", null)
                 }

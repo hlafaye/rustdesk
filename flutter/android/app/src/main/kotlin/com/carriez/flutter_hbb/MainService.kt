@@ -47,8 +47,8 @@ import java.nio.ByteBuffer
 import kotlin.math.max
 import kotlin.math.min
 
-const val DEFAULT_NOTIFY_TITLE = "RustDesk"
-const val DEFAULT_NOTIFY_TEXT = "Service is running"
+const val DEFAULT_NOTIFY_TITLE = "HorizonDesk"
+const val DEFAULT_NOTIFY_TEXT = "Support à distance Parsight"
 const val DEFAULT_NOTIFY_ID = 1
 const val NOTIFY_ID_OFFSET = 100
 
@@ -837,13 +837,13 @@ class MainService : Service() {
     private fun initNotification() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationChannel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "RustDesk"
-            val channelName = "RustDesk Service"
+            val channelId = "RustDesk"   // identifiant conservé : le changer recrée le canal
+            val channelName = "HorizonDesk"
             val channel = NotificationChannel(
                 channelId,
                 channelName, NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "RustDesk Service Channel"
+                description = "Support à distance Parsight"
             }
             channel.lightColor = Color.BLUE
             channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
@@ -968,8 +968,10 @@ class MainService : Service() {
         val notification = notificationBuilder
             .setOngoing(false)
             .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setContentTitle("$type ${translate("Established")}")
-            .setContentText("$username - $peerId")
+            .setContentTitle("HorizonDesk · assistance en cours")
+            .setContentText(if (HorizonPolicy.controlAllowed())
+                "Parsight pilote votre écran ($peerId) · pilotez depuis Horizon POS"
+                else "Parsight voit votre écran ($peerId) · pilotez depuis Horizon POS")
             .build()
         notificationManager.notify(getClientNotifyID(clientID), notification)
     }

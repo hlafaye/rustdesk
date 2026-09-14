@@ -65,6 +65,9 @@ object HorizonPolicy {
     @Volatile
     var until: Long = 0
         private set
+    /** Dernier appel ADMIS d'Horizon POS (ms epoch) — l'écran HorizonDesk en déduit « relié ». */
+    @Volatile
+    var lastContact: Long = 0
 
     private val journal = ArrayDeque<JSONObject>()
 
@@ -192,6 +195,7 @@ class HorizonBridgeProvider : ContentProvider() {
             HorizonPolicy.note("caller_refused", refusal)
             return error("caller_refused")
         }
+        HorizonPolicy.lastContact = System.currentTimeMillis()
         when (method) {
             "status" -> {}
             "arm" -> {
@@ -207,44 +211,15 @@ class HorizonBridgeProvider : ContentProvider() {
             }
             else -> return error("unknown_method")
         }
-        return status(ctx)
-    }
-
-    private fun status(ctx: Context): Bundle {
-        val service = MainService.instance
-        val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        // L'ID ne se lit que moteur démarré : avant, la config n'est pas chargée et la
-        // lecture pourrait en fabriquer une autre. Sinon, le dernier ID connu.
-        var id = prefs.getString("last_id", "") ?: ""
-        if (service != null) {
-            val live = try { FFI.hzGetMyId() } catch (e: Throwable) { "" }
-            if (live.isNotBlank() && live != id) {
-                id = live
-                prefs.edit().putString("last_id", live).apply()
-            }
-        }
-        val connections = JSONArray(HorizonEnforcer.liveClients(service).map {
-            JSONObject().put("peer_id", it.optString("peer_id"))
-                .put("name", it.optString("name"))
-                .put("authorized", it.optBoolean("authorized"))
-                .put("keyboard", it.optBoolean("keyboard"))
-                .put("file_transfer", it.optBoolean("is_file_transfer"))
-        })
         return Bundle().apply {
-            putBoolean("ok", true)
-            putInt("bridge_version", 1)
-            putString("version", try {
-                ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: ""
-            } catch (e: Exception) { "" })
-            putString("id", id)
-            putBoolean("service", service != null)
-            putBoolean("sharing", MainService.isReady)
-            putBoolean("input_enabled", InputService.isOpen)
-            putBoolean("armed", HorizonPolicy.armed())
-            putBoolean("control", HorizonPolicy.controlAllowed())
-            putLong("session_id", if (HorizonPolicy.armed()) HorizonPolicy.sessionId else 0L)
-            putString("connections", connections.toString())
-            putString("journal", HorizonPolicy.journalJson())
+            HorizonStatus.snapshot(ctx).forEach { (k, v) ->
+                when (v) {
+                    is Boolean -> putBoolean(k, v)
+                    is Int -> putInt(k, v)
+                    is Long -> putLong(k, v)
+                    is String -> putString(k, v)
+                }
+            }
         }
     }
 
@@ -292,5 +267,73 @@ class HorizonShareActivity : android.app.Activity() {
             HorizonPolicy.note("share_ignored", if (MainService.isReady) "partage déjà actif" else "pont non armé")
         }
         finish()
+    }
+}
+
+
+/** État HorizonDesk partagé par le pont (Horizon POS) et l'écran de l'app (Flutter). */
+object HorizonStatus {
+    fun snapshot(ctx: Context): Map<String, Any?> {
+        val service = MainService.instance
+        val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        // L'ID ne se lit que moteur démarré (sinon la config n'est pas chargée) ; l'écran de
+        // l'app le dépose via `noteId`. À défaut, le dernier ID connu.
+        var id = prefs.getString("last_id", "") ?: ""
+        if (service != null) {
+            val live = try { FFI.hzGetMyId() } catch (e: Throwable) { "" }
+            if (live.isNotBlank() && live != id) {
+                id = live
+                prefs.edit().putString("last_id", live).apply()
+            }
+        }
+        val connections = JSONArray(HorizonEnforcer.liveClients(service).map {
+            JSONObject().put("peer_id", it.optString("peer_id"))
+                .put("name", it.optString("name"))
+                .put("authorized", it.optBoolean("authorized"))
+                .put("keyboard", it.optBoolean("keyboard"))
+                .put("file_transfer", it.optBoolean("is_file_transfer"))
+        })
+        val pm = ctx.packageManager
+        val callerVersion = try {
+            pm.getPackageInfo(HorizonPolicy.CALLER_PACKAGE, 0).versionName ?: ""
+        } catch (e: Exception) { null }
+        return mapOf(
+            "ok" to true,
+            "bridge_version" to 1,
+            "version" to (try { pm.getPackageInfo(ctx.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }),
+            "id" to id,
+            "service" to (service != null),
+            "sharing" to MainService.isReady,
+            "input_enabled" to InputService.isOpen,
+            "armed" to HorizonPolicy.armed(),
+            "control" to HorizonPolicy.controlAllowed(),
+            "session_id" to (if (HorizonPolicy.armed()) HorizonPolicy.sessionId else 0L),
+            "connections" to connections.toString(),
+            "journal" to HorizonPolicy.journalJson(),
+            "caller_installed" to (callerVersion != null),
+            "caller_version" to (callerVersion ?: ""),
+            "last_contact_ms_ago" to (if (HorizonPolicy.lastContact == 0L) -1L
+                                      else System.currentTimeMillis() - HorizonPolicy.lastContact),
+        )
+    }
+
+    fun noteId(ctx: Context, id: String) {
+        val clean = id.filter { it.isDigit() }
+        if (clean.isNotEmpty()) {
+            ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("last_id", clean).apply()
+        }
+    }
+
+    /** Raccourcis de l'écran : accessibilité, infos de l'app, Horizon POS. */
+    fun open(ctx: Context, target: String): Boolean {
+        val intent = when (target) {
+            "accessibility" -> android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            "app_info" -> android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", ctx.packageName, null))
+            "horizonpos" -> ctx.packageManager.getLaunchIntentForPackage(HorizonPolicy.CALLER_PACKAGE)
+            else -> null
+        } ?: return false
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        return try { ctx.startActivity(intent); true } catch (e: Exception) { false }
     }
 }

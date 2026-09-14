@@ -8,6 +8,7 @@ import '../../common/widgets/chat_page.dart';
 import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
 import 'connection_page.dart';
+import 'horizondesk_page.dart';
 
 abstract class PageShape extends Widget {
   final String title = "";
@@ -59,10 +60,21 @@ class HomePageState extends State<HomePage> {
     _pages.add(SettingsPage());
   }
 
+  /// HorizonDesk : l'écran dédié passe devant ; les onglets d'origine (réglages avancés)
+  /// ne s'ouvrent qu'à la demande, pour le support.
+  bool _advanced = false;
+
   @override
   Widget build(BuildContext context) {
+    if (isAndroid && !_advanced) {
+      return HorizonDeskPage(onAdvanced: () => setState(() => _advanced = true));
+    }
     return WillPopScope(
         onWillPop: () async {
+          if (isAndroid && _selectedIndex == 0) {
+            setState(() => _advanced = false);
+            return false;
+          }
           if (_selectedIndex != 0) {
             setState(() {
               _selectedIndex = 0;
@@ -76,6 +88,12 @@ class HomePageState extends State<HomePage> {
           // backgroundColor: MyTheme.grayBg,
           appBar: AppBar(
             centerTitle: true,
+            leading: isAndroid
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    tooltip: 'HorizonDesk',
+                    onPressed: () => setState(() => _advanced = false))
+                : null,
             title: appTitle(),
             actions: _pages.elementAt(_selectedIndex).appBarActions,
           ),
@@ -150,7 +168,7 @@ class HomePageState extends State<HomePage> {
         ],
       );
     }
-    return Text(bind.mainGetAppNameSync());
+    return Text(isAndroid ? 'HorizonDesk' : bind.mainGetAppNameSync());
   }
 }
 
