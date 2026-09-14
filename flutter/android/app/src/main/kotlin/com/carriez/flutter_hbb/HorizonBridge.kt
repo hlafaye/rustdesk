@@ -13,8 +13,8 @@ package com.carriez.flutter_hbb
  * - D3 — clavier/souris coupés tant que la session n'est pas en contrôle.
  * - D4 — fin d'autorisation (fin, interruption, expiration) : connexions fermées, partage
  *        arrêté, poste désenregistré du relay (D1 : injoignable hors session).
- * - D5 — autorisation À DURÉE COURTE, renouvelée à chaque pulsation d'Horizon POS : si la
- *        caisse plante ou se ferme, HorizonDesk coupe tout seul.
+ * - D5 — autorisation À DURÉE COURTE (5 min, renouvelée à chaque pulsation d'Horizon POS) :
+ *        si la caisse plante ou se ferme, HorizonDesk coupe tout seul.
  * - D6 — `status` rend l'ID, l'état du partage et de la saisie : plus de saisie manuelle.
  * - D7 — seul `fr.parsight.horizonpos`, signé par la clé Parsight, peut parler au pont.
  *
@@ -52,7 +52,9 @@ object HorizonPolicy {
         "C2:FD:F7:24:D2:67:19:A0:A2:50:58:86:70:B9:BB:BB:6B:EA:F2:6C:44:18:8C:9F:8A:5A:3D:3E:BC:BC:EC:64",
     )
 
-    private const val MAX_TTL_MS = 180_000L
+    /** Plafond de l'autorisation. Ce n'est PAS la durée de l'assistance (renouvelée à
+     *  chaque pulsation) : c'est la marge avant coupure quand la caisse se tait. */
+    private const val MAX_TTL_MS = 600_000L
 
     @Volatile
     var sessionId: Long = 0

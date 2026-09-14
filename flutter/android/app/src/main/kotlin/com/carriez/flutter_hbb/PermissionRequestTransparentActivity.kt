@@ -47,6 +47,15 @@ class PermissionRequestTransparentActivity: Activity() {
                     setResult(RES_FAILED)
                 }
             }
+            // HorizonDesk : revenir à la caisse. Test C-02 (14/09) : après la fenêtre
+            // « Tout l'écran », Horizon POS restait en arrière-plan — minuteries en pause,
+            // plus de pulsation, et l'autorisation du pont expirait en pleine assistance.
+            if (intent.action == ACT_HORIZON_START_SHARING) {
+                packageManager.getLaunchIntentForPackage(HorizonPolicy.CALLER_PACKAGE)?.let {
+                    it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    try { startActivity(it) } catch (e: Exception) { Log.w(logTag, "retour caisse", e) }
+                }
+            }
         }
 
         finish()
