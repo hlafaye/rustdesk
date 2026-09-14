@@ -66,6 +66,8 @@ class MainService : Service() {
     @Keep
     @RequiresApi(Build.VERSION_CODES.N)
     fun rustPointerInput(kind: Int, mask: Int, x: Int, y: Int) {
+        // HorizonDesk D3 : aucune saisie à distance hors prise de contrôle Horizon.
+        if (!HorizonPolicy.controlAllowed()) return
         // turn on screen with LEFT_DOWN when screen off
         if (!powerManager.isInteractive && (kind == 0 || mask == LEFT_DOWN)) {
             if (wakeLock.isHeld) {
@@ -91,6 +93,7 @@ class MainService : Service() {
     @Keep
     @RequiresApi(Build.VERSION_CODES.N)
     fun rustKeyEventInput(input: ByteArray) {
+        if (!HorizonPolicy.controlAllowed()) return   // HorizonDesk D3
         InputService.ctx?.onKeyEvent(input)
     }
 
@@ -127,7 +130,10 @@ class MainService : Service() {
                     } else {
                         translate("Share screen")
                     }
-                    if (authorized) {
+                    // HorizonDesk D2 : la session Horizon décide, pas une fenêtre « Accepter ».
+                    val bridge = HorizonEnforcer.onConnection(id, authorized, peerId)
+                    if (bridge == HorizonEnforcer.REFUSED) return
+                    if (authorized || bridge == HorizonEnforcer.AUTHORIZED) {
                         if (!isFileTransfer && !isStart) {
                             startCapture()
                         }
@@ -196,6 +202,8 @@ class MainService : Service() {
     private val wakeLock: PowerManager.WakeLock by lazy { powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "rustdesk:wakelock")}
 
     companion object {
+        /** Instance vivante — lue par le pont HorizonDesk (HorizonBridge.kt). */
+        @Volatile var instance: MainService? = null
         private var _isReady = false // media permission ready status
         private var _isStart = false // screen capture start status
         private var _isAudioStart = false // audio capture start status
@@ -262,9 +270,24 @@ class MainService : Service() {
         FFI.startServer(configPath, homePath, "")
 
         createForegroundNotification()
+
+        // HorizonDesk : la politique du pont est réappliquée en continu — c'est ce qui
+        // coupe une connexion quand l'autorisation d'Horizon POS expire (D5).
+        instance = this
+        serviceHandler?.post(horizonTick)
+    }
+
+    private val horizonTick = object : Runnable {
+        override fun run() {
+            try { HorizonEnforcer.tick(this@MainService) } catch (e: Throwable) {
+                Log.e(logTag, "horizon tick", e)
+            }
+            if (instance === this@MainService) serviceHandler?.postDelayed(this, 2000)
+        }
     }
 
     override fun onDestroy() {
+        if (instance === this) instance = null
         checkMediaPermission()
         stopService(Intent(this, FloatingWindowService::class.java))
         super.onDestroy()
@@ -353,7 +376,8 @@ class MainService : Service() {
         Log.d("whichService", "this service: ${Thread.currentThread()}")
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACT_INIT_MEDIA_PROJECTION_AND_SERVICE) {
-            if (intent.getBooleanExtra(EXT_INIT_FROM_BOOT, false)) {
+            if (intent.getBooleanExtra(EXT_INIT_FROM_BOOT, false)
+                || intent.getBooleanExtra(EXT_HORIZON_START, false)) {
                 FFI.startService()
             }
             Log.d(logTag, "service starting: ${startId}:${Thread.currentThread()}")

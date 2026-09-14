@@ -3017,4 +3017,59 @@ pub mod server_side {
     ) -> jboolean {
         jboolean::from(crate::server::is_clipboard_service_ok())
     }
+
+    // ---------------------------------------------------------------------------
+    // HorizonDesk — pont Horizon POS (SPEC caisse §6.x2). Ces fonctions exposent au
+    // Kotlin ce que l'UI Flutter fait déjà par `bind.cm*` : sans elles, le Kotlin ne
+    // peut ni accepter, ni refuser, ni couper la saisie d'une connexion ENTRANTE
+    // (`closeAllSessions` ne ferme que les sessions sortantes).
+    // ---------------------------------------------------------------------------
+
+    /// ID du poste tel que l'annonce le rendez-vous (vide tant qu'il n'est pas fixé).
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_ffi_FFI_hzGetMyId(env: JNIEnv, _class: JClass) -> jstring {
+        let id = crate::ui_interface::get_id();
+        return env.new_string(id).unwrap_or_default().into_raw();
+    }
+
+    /// Connexions entrantes connues du gestionnaire (JSON `Client[]`).
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_ffi_FFI_hzClientsState(env: JNIEnv, _class: JClass) -> jstring {
+        let state = crate::ui_cm_interface::get_clients_state();
+        return env.new_string(state).unwrap_or_default().into_raw();
+    }
+
+    /// Accepte une connexion en attente (équivalent du clic « Accepter »).
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_ffi_FFI_hzAuthorize(_env: JNIEnv, _class: JClass, id: jni::sys::jint) {
+        crate::ui_cm_interface::authorize(id);
+    }
+
+    /// Ferme une connexion entrante, en attente ou établie.
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_ffi_FFI_hzClose(_env: JNIEnv, _class: JClass, id: jni::sys::jint) {
+        crate::ui_cm_interface::close(id);
+    }
+
+    /// Désenregistre le poste du relay (même effet que « Arrêter le service » de l'UI).
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_ffi_FFI_hzStopService(_env: JNIEnv, _class: JClass) {
+        config::Config::set_option("stop-service".into(), "Y".into());
+        crate::rendezvous_mediator::RendezvousMediator::restart();
+    }
+
+    /// Autorise ou retire une permission (« keyboard » = clavier ET souris) sur toutes
+    /// les connexions entrantes.
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_ffi_FFI_hzSwitchPermissionAll(
+        env: JNIEnv,
+        _class: JClass,
+        name: JString,
+        enabled: jboolean,
+    ) {
+        let mut env = env;
+        if let Ok(name) = env.get_string(&name) {
+            crate::ui_cm_interface::switch_permission_all(name.into(), enabled != 0);
+        }
+    }
 }

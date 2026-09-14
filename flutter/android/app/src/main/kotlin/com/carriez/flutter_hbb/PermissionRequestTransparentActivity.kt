@@ -16,7 +16,14 @@ class PermissionRequestTransparentActivity: Activity() {
         Log.d(logTag, "onCreate PermissionRequestTransparentActivity: intent.action: ${intent.action}")
 
         when (intent.action) {
-            ACT_REQUEST_MEDIA_PROJECTION -> {
+            ACT_REQUEST_MEDIA_PROJECTION, ACT_HORIZON_START_SHARING -> {
+                // HorizonDesk : Horizon POS ouvre le partage juste après l'accord de la caisse.
+                // Rien sans autorisation en cours ; rien à faire si le partage tourne déjà.
+                if (intent.action == ACT_HORIZON_START_SHARING
+                    && (!HorizonPolicy.armed() || MainService.isReady)) {
+                    finish()
+                    return
+                }
                 val mediaProjectionManager =
                     getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
                 val intent = mediaProjectionManager.createScreenCaptureIntent()
@@ -50,6 +57,11 @@ class PermissionRequestTransparentActivity: Activity() {
         val serviceIntent = Intent(this, MainService::class.java)
         serviceIntent.action = ACT_INIT_MEDIA_PROJECTION_AND_SERVICE
         serviceIntent.putExtra(EXT_MEDIA_PROJECTION_RES_INTENT, mediaProjectionResultIntent)
+        // Démarrage par le pont : réenregistrer le poste auprès du relay (l'UI Flutter le
+        // fait par `mainStartService`, que ce chemin ne traverse pas).
+        if (intent.action == ACT_HORIZON_START_SHARING) {
+            serviceIntent.putExtra(EXT_HORIZON_START, true)
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)

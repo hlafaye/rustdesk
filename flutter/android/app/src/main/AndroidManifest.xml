@@ -20,6 +20,8 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <queries>
+        <!-- HorizonDesk : lire la signature d'Horizon POS (seul appelant admis du pont). -->
+        <package android:name="fr.parsight.horizonpos" />
         <intent>
             <!-- https://developer.android.com/training/package-visibility/use-cases#open-urls-custom-tabs -->
             <action android:name="android.support.customtabs.action.CustomTabsService" />
@@ -87,6 +89,27 @@
             android:name=".PermissionRequestTransparentActivity"
             android:excludeFromRecents="true"
             android:theme="@style/Transparent" />
+
+        <!-- HorizonDesk : ouverte par Horizon POS après l'accord de la caisse. Ne fait que
+             relayer vers la demande de capture ; sans autorisation du pont, se referme. -->
+        <activity
+            android:name=".HorizonShareActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@style/Transparent">
+            <intent-filter>
+                <action android:name="fr.parsight.horizondesk.START_SHARING" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- HorizonDesk : pont Horizon POS (HorizonBridge.kt). Exporté, mais n'obéit qu'à
+             fr.parsight.horizonpos signé Parsight (vérifié dans call()). -->
+        <provider
+            android:name=".HorizonBridgeProvider"
+            android:authorities="fr.parsight.horizondesk.bridge"
+            android:exported="true" />
 
         <service
             android:name=".MainService"
